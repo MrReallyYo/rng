@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GW2 Stat Calculator</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Segoe UI", Arial, sans-serif; background: #101722; color: #e8edf5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 1100px; margin: auto; padding: 40px 24px; }
+    h1 { font-size: clamp(28px, 5vw, 42px); margin: 6px 0 12px; }
+    h2 { font-size: 23px; margin: 0 0 10px; }
+    h3 { font-size: 17px; margin: 0 0 10px; }
+    p { line-height: 1.6; }
+    .eyebrow { color: #79dac7; font-size: 12px; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; }
+    .muted, .hint { color: #afbdd0; }
+    .hint { font-size: 13px; margin: 8px 0 0; }
+    section { margin-top: 26px; padding: 26px; border: 1px solid #344155; border-radius: 16px; background: #192333; }
+    .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 22px 0; }
+    .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    label { display: block; color: #d2dcea; font-size: 14px; }
+    input { display: block; width: 100%; margin-top: 8px; padding: 12px; border: 1px solid #586b85; border-radius: 8px; background: #101722; color: #fff; font: inherit; font-size: 17px; }
+    input:focus-visible, summary:focus-visible { outline: 3px solid #79dac7; outline-offset: 3px; }
+    input[aria-invalid="true"] { border-color: #ffacac; }
+    .result { background: #102c2b; border: 1px solid #3b756c; border-radius: 10px; padding: 18px; }
+    .result h3 { color: #9debd6; font-size: 21px; }
+    .result p { margin: 6px 0; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; font-variant-numeric: tabular-nums; }
+    th, td { padding: 12px 10px; text-align: right; border-bottom: 1px solid #3b4b60; white-space: nowrap; }
+    th { font-size: 13px; color: #bfcbda; }
+    th:first-child, td:first-child { text-align: left; }
+    .builds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    fieldset { min-width: 0; margin: 16px 0; padding: 18px; border: 1px solid #43536c; border-radius: 10px; }
+    legend { padding: 0 8px; font-weight: 600; }
+    fieldset label + label { margin-top: 16px; }
+    .error { color: #ffbaba; line-height: 1.6; }
+    summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+    code { color: #9debd6; overflow-wrap: anywhere; }
+    footer { color: #afbdd0; font-size: 13px; margin-top: 24px; }
+    [hidden] { display: none !important; }
+    @media (max-width: 650px) {
+      main { padding: 25px 14px; }
+      section { padding: 18px; }
+      .fields, .builds { grid-template-columns: 1fr; gap: 14px; }
+      fieldset { margin: 0; }
+      .builds { margin-top: 20px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Guild Wars 2 / Strike damage</div>
+    <h1>Make your stats count.</h1>
+    <p class="muted">Compare Power and Ferocity upgrades, or check two complete builds. Use your buffed, in-combat stats. Results update as you type.</p>
+  </header>
+
+  <section aria-labelledby="upgrade-heading">
+    <h2 id="upgrade-heading">Power or Ferocity?</h2>
+    <p class="muted">Enter your current stats to see whether adding Power or Ferocity is better, point for point.</p>
+    <form id="upgrade-form" novalidate>
+      <div class="fields">
+        <label>Base Power<input id="power" type="text" inputmode="decimal" value="3450" required></label>
+        <label>Critical chance (%)<input id="chance" type="text" inputmode="decimal" value="100" required></label>
+        <label>Critical damage (%)<input id="damage" type="text" inputmode="decimal" value="231" required></label>
+      </div>
+      <p class="hint">Enter total displayed critical damage, e.g. 231, not its 131% bonus. Decimal commas and optional % signs on percentage fields are accepted. No thousands separators.</p>
+      <p id="upgrade-error" class="error" role="alert" hidden></p>
+      <div id="upgrade-result" aria-live="polite" aria-atomic="true">
+        <div class="result">
+          <h3 id="upgrade-winner"></h3>
+          <p class="hint">For equal amounts of added Power or Ferocity, with crit chance unchanged.</p>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section aria-labelledby="build-heading">
+    <h2 id="build-heading">Compare complete builds</h2>
+    <p class="muted">Use this when a gear change affects multiple stats at once. These inputs are independent of the upgrade comparison above.</p>
+    <form id="build-form" novalidate>
+      <div class="builds">
+        <fieldset><legend>Build A</legend>
+          <label>Power<input id="a-power" type="text" inputmode="decimal" value="2769" required></label>
+          <label>Critical chance (%)<input id="a-chance" type="text" inputmode="decimal" value="80.81" required></label>
+          <label>Critical damage (%)<input id="a-damage" type="text" inputmode="decimal" value="196.87" required></label>
+        </fieldset>
+        <fieldset><legend>Build B</legend>
+          <label>Power<input id="b-power" type="text" inputmode="decimal" value="2773" required></label>
+          <label>Critical chance (%)<input id="b-chance" type="text" inputmode="decimal" value="75.33" required></label>
+          <label>Critical damage (%)<input id="b-damage" type="text" inputmode="decimal" value="204.53" required></label>
+        </fieldset>
+      </div>
+      <p id="build-error" class="error" role="alert" hidden></p>
+      <div id="build-result" aria-live="polite" aria-atomic="true">
+        <div class="table-wrap">
+          <table>
+            <caption class="hint">Expected effective power by build</caption>
+            <thead><tr><th>Build</th><th>Effective power</th></tr></thead>
+            <tbody><tr><td>A</td><td id="a-ep"></td></tr><tr><td>B</td><td id="b-ep"></td></tr></tbody>
+          </table>
+        </div>
+        <div class="result"><h3 id="build-winner"></h3><p id="build-difference"></p></div>
+      </div>
+    </form>
+  </section>
+
+  <section aria-label="Calculation explanation">
+    <details>
+      <summary>How the calculations work</summary>
+      <p><code>Effective power = P &times; [1 + (C / 100) &times; (D / 100 - 1)]</code></p>
+      <p>P is Power, C is critical chance in percent, and D is total critical damage in percent. Normal hits contribute P; critical hits contribute P &times; D / 100. The formula takes their probability-weighted average.</p>
+      <p>15 Ferocity adds 1 percentage point of critical damage. One point of Power adds <code>1 + c(D / 100 - 1)</code> effective power; one point of Ferocity adds <code>Pc / 1500</code>. The recommendation compares these gains, where c = C / 100. Equal Power/Ferocity additions break even when <code>P = 15D + 1500(1 - c) / c</code>.</p>
+      <p>At 100% crit, the equal-budget rule is <code>P = 15D</code>. At 75% crit, it is <code>P = 15D + 500</code>. Below the target, favor Power; above it, favor Ferocity.</p>
+      <p>In the complete-build comparison, the winner's percentage advantage is relative to the other build's effective power. Values are rounded only for display.</p>
+    </details>
+    <p class="hint">This is an average strike-damage metric, not DPS. It excludes condition damage, on-crit effects, special trait interactions, rotation changes, and differences in weapon strength, skill coefficients or other damage modifiers. Crit chance must be 0&ndash;100%. All calculations stay in your browser.</p>
+  </section>
+  <footer>No installation, account or network connection needed.</footer>
+</main>
+<script>
+  "use strict";
+
+  const byId = (id) => document.getElementById(id);
+  const numberFormat = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+  const preciseFormat = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2, maximumFractionDigits: 6
+  });
+  const format = (value) => numberFormat.format(value);
+  const precise = (value) => preciseFormat.format(value);
+  const text = (id, value) => { byId(id).textContent = value; };
+
+  function readValue(id, label, errors, minimum = 0, maximum = Infinity, percent = false) {
+    const input = byId(id);
+    let raw = input.value.trim();
+    if (percent) raw = raw.replace(/%\s*$/, "").trim();
+    const value = Number(raw.replace(",", "."));
+    let error = "";
+    if (!/^(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(raw) || !Number.isFinite(value)) {
+      error = `${label}: enter a finite, non-negative number without thousands separators.`;
+    } else if (value < minimum || value > maximum) {
+      error = maximum === Infinity
+        ? `${label}: must be at least ${minimum}.`
+        : `${label}: must be between ${minimum} and ${maximum}.`;
+    }
+    input.setAttribute("aria-invalid", String(Boolean(error)));
+    if (error) {
+      input.setAttribute("aria-describedby", input.form.id === "upgrade-form" ? "upgrade-error" : "build-error");
+      errors.push(error);
+    } else {
+      input.removeAttribute("aria-describedby");
+    }
+    return value;
+  }
+
+  function readStats(prefix, label, errors) {
+    return {
+      power: readValue(`${prefix}power`, `${label}Power`, errors),
+      chance: readValue(`${prefix}chance`, `${label}critical chance`, errors, 0, 100, true),
+      damage: readValue(`${prefix}damage`, `${label}critical damage`, errors, 100, Infinity, true)
+    };
+  }
+
+  function effectivePower(power, chance, damage) {
+    return power * (1 + (chance / 100) * (damage / 100 - 1));
+  }
+
+  function showErrors(prefix, errors) {
+    text(`${prefix}-error`, errors.join(" "));
+    byId(`${prefix}-error`).hidden = errors.length === 0;
+    byId(`${prefix}-result`).hidden = errors.length > 0;
+    return errors.length > 0;
+  }
+
+  function compare(left, right, leftName, rightName) {
+    const difference = Math.abs(left - right);
+    const tolerance = Number.EPSILON * 8 * Math.max(Math.abs(left), Math.abs(right));
+    if (difference <= tolerance) {
+      return { winner: "Both options are equally effective", detail: "No difference in expected effective power." };
+    }
+    const winner = left > right ? leftName : rightName;
+    const lower = Math.min(left, right);
+    const advantage = lower === 0
+      ? "A percentage comparison is undefined because the other option has zero effective power."
+      : `${precise(difference / lower * 100)}% higher than the other option's final effective power.`;
+    return { winner: `${winner} is better`, detail: `${precise(difference)} more effective power. ${advantage}` };
+  }
+
+  function updateUpgrades() {
+    const errors = [];
+    const { power, chance, damage } = readStats("", "Base ", errors);
+    if (showErrors("upgrade", errors)) return;
+    const c = chance / 100;
+    const powerGain = 1 + c * (damage / 100 - 1);
+    const ferocityGain = power * c / 1500;
+    if (![powerGain, ferocityGain].every(Number.isFinite)) {
+      showErrors("upgrade", ["These values are too large to calculate. Enter smaller values."]);
+      return;
+    }
+    const comparison = compare(powerGain, ferocityGain, "Power", "Ferocity");
+    text("upgrade-winner", comparison.winner);
+  }
+
+  function updateBuilds() {
+    const errors = [];
+    const a = readStats("a-", "Build A ", errors);
+    const b = readStats("b-", "Build B ", errors);
+    if (showErrors("build", errors)) return;
+    const left = effectivePower(a.power, a.chance, a.damage);
+    const right = effectivePower(b.power, b.chance, b.damage);
+    if (![left, right].every(Number.isFinite)) {
+      showErrors("build", ["These values are too large to calculate. Enter smaller values."]);
+      return;
+    }
+    text("a-ep", format(left));
+    text("b-ep", format(right));
+    const comparison = compare(left, right, "Build A", "Build B");
+    text("build-winner", comparison.winner);
+    text("build-difference", comparison.detail);
+  }
+
+  for (const [id, update] of [["upgrade-form", updateUpgrades], ["build-form", updateBuilds]]) {
+    byId(id).addEventListener("input", update);
+    byId(id).addEventListener("submit", (event) => { event.preventDefault(); update(); });
+    update();
+  }
+</script>
+</body>
+</html>
